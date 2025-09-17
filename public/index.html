@@ -233,7 +233,8 @@
     }
     return out;
   }
-
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
   // ========= Ask flow =========
   byId('askBtn').addEventListener('click', ask);
   byId('q').addEventListener('keydown', e=>{ if(e.key==='Enter') ask(); });
