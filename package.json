@@ -1,0 +1,11 @@
+{
+  "name": "rag-vercel",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'static app'",
+    "start": "vercel dev"
+  },
+  "dependencies": {}
+}
