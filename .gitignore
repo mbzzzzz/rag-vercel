@@ -1,0 +1,5 @@
+# local env & logs
+.env
+.vercel
+node_modules
+.DS_Store
