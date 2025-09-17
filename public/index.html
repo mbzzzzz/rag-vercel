@@ -103,17 +103,25 @@
   </div>
 </div>
 
+<!-- pdf.js for client-side PDF text extraction -->
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script>
+  // Set the worker right after pdf.js loads
+  if (!window.pdfjsLib) {
+    alert("pdf.js failed to load");
+  } else {
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+  }
+</script>
+
 <script>
   // ========= Config =========
   const BACKEND_BASE_URL = () => {
     const input = document.getElementById('backend').value.trim();
     return input || window.location.origin; // same-origin default (Vercel)
   };
-  const state = {
-    apiKey: '',
-    docs: [],          // {id, name, text, chunks}
-    vectors: [],       // {docId, text, vec}
-  };
+  const state = { apiKey: '', docs: [], vectors: [] };
 
   // ========= Utilities =========
   const byId = id => document.getElementById(id);
@@ -194,7 +202,7 @@
         } catch (err) {
           console.error('PDF read error:', err);
           alert('Could not read PDF: ' + (err?.message || err));
-          continue; // skip this file
+          continue;
         }
       }
       else if (ext === 'txt' || ext === 'md') {
@@ -234,6 +242,7 @@
 
   // ========= PDF text via pdf.js =========
   async function readPdf(file){
+    if (!window.pdfjsLib) throw new Error("pdf.js not available");
     const ab = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
     let out = '';
@@ -272,7 +281,6 @@
     try{
       const base = BACKEND_BASE_URL();
       let answer = '';
-      // Prefer backend
       try {
         const res = await fetch(`${base}/api/chat`, {
           method:'POST', headers:{'Content-Type':'application/json'},
@@ -282,7 +290,6 @@
         if (!res.ok) throw new Error(data?.error || 'chat failed');
         answer = (data && data.answer) || 'No answer.';
       } catch (e) {
-        // Dev-only fallback if you put key in browser (not recommended)
         if (state.apiKey){
           const prompt = `Use the context to answer. If missing, say you lack info.\n\nContext:\n${context}\n\nQuestion: ${q}`;
           const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${state.apiKey}`,{
@@ -304,7 +311,7 @@
 
   function topKLocal(query, k){
     const first = state.vectors[0]?.vec;
-    const backendMode = Array.isArray(first); // arrays mean real vectors
+    const backendMode = Array.isArray(first);
     const qv = backendMode ? hashVec(query, first.length || 768) : bagOfWordsVec(query);
     const scored = state.vectors.map(v=>{
       const score = backendMode ? cosineArrays(qv, v.vec) : cosine(qv, v.vec);
@@ -333,9 +340,9 @@
     return (s || '').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replace(/\n/g, '<br/>');
   }
 
-  // initial render
   render();
 </script>
+
 
 </body>
 </html>
