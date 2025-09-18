@@ -1,348 +1,354 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>RAG (Minimal)</title>
-<link rel="preconnect" href="https://cdnjs.cloudflare.com" />
-<style>
-  :root{--bg:#0b0c10;--card:#12141a;--muted:#7a7f8c;--fg:#e9ecf1;--brand:#7c8cff;--line:#1d212c}
-  *{box-sizing:border-box} html,body{height:100%} body{
-    margin:0; font:14px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
-    color:var(--fg); background:var(--bg); display:flex; align-items:center; justify-content:center; padding:24px;
-  }
-  .wrap{width:100%; max-width:980px; display:grid; gap:16px}
-  .title{font-size:16px; color:var(--muted)}
-  .grid{display:grid; grid-template-columns:1fr 1fr; gap:16px}
-  .card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px}
-  .row{display:flex; gap:8px; align-items:center}
-  .input, .btn{
-    border-radius:10px; border:1px solid var(--line); background:#0e1117; color:var(--fg);
-    height:40px; padding:0 12px; outline:none;
-  }
-  .input:focus{border-color:#2a3242}
-  .btn{background:var(--brand); border-color:transparent; color:#0a0b10; font-weight:600; cursor:pointer}
-  .btn:disabled{opacity:.5; cursor:not-allowed}
-  .muted{color:var(--muted); font-size:12px}
-  .stack{display:flex; flex-direction:column; gap:8px}
-  .drop{
-    border:1px dashed #2b3244; border-radius:12px; padding:16px; text-align:center; color:var(--muted); background:#0e1117
-  }
-  .list{display:flex; flex-direction:column; gap:6px; max-height:160px; overflow:auto}
-  .item{display:flex; justify-content:space-between; gap:8px; padding:8px 10px; border:1px solid var(--line); border-radius:10px; background:#0e1117}
-  .badge{font-size:11px; color:#b7bfd0; background:#141922; border:1px solid #1e2431; padding:2px 6px; border-radius:999px}
-  .chat{height:360px; overflow:auto; display:flex; flex-direction:column; gap:10px; border:1px solid var(--line); border-radius:12px; padding:12px; background:#0e1117}
-  .msg{max-width:74%; padding:10px 12px; border-radius:12px; border:1px solid var(--line)}
-  .me{align-self:flex-end; background:#151a26}
-  .ai{align-self:flex-start; background:#0b0e15}
-  .foot{display:flex; gap:8px}
-  .spinner{width:16px;height:16px;border:2px solid #2a3242;border-top-color:var(--brand);border-radius:50%;animation:spin 1s linear infinite}
-  @keyframes spin{to{transform:rotate(360deg)}}
-  @media(max-width:860px){.grid{grid-template-columns:1fr}}
-</style>
-<!-- pdf.js for client-side PDF text extraction -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" integrity="sha512-2mV8lq3uIl1mRkF3Hqg1oY3oN1xvE2wT4cKf2t0d0E+f4TQn0F0Sx8Qh3pV6oVQxSsea8nK6s2S2fR3mRr8qTg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>RAG (Gemini • Minimal)</title>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.0.0/dist/umd/supabase.min.js"></script>
+  <style>
+    :root{--bg:#0b0c10;--card:#12141a;--muted:#7a7f8c;--fg:#e9ecf1;--brand:#7c8cff;--line:#1d212c}
+    *{box-sizing:border-box} html,body{height:100%} body{
+      margin:0; font:14px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
+      color:var(--fg); background:var(--bg); display:flex; align-items:center; justify-content:center; padding:24px;
+    }
+    .wrap{width:100%; max-width:980px; display:grid; gap:16px}
+    .title{font-size:16px; color:var(--muted)}
+    .grid{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+    .card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px}
+    .row{display:flex; gap:8px; align-items:center}
+    .input, .btn{
+      border-radius:10px; border:1px solid var(--line); background:#0e1117; color:var(--fg);
+      height:40px; padding:0 12px; outline:none;
+    }
+    .input:focus{border-color:#2a3242}
+    .btn{background:var(--brand); border-color:transparent; color:#0a0b10; font-weight:600; cursor:pointer}
+    .btn:disabled{opacity:.5; cursor:not-allowed}
+    .muted{color:var(--muted); font-size:12px}
+    .stack{display:flex; flex-direction:column; gap:8px}
+    .drop{
+      border:1px dashed #2b3244; border-radius:12px; padding:16px; text-align:center; color:var(--muted); background:#0e1117
+    }
+    .list{display:flex; flex-direction:column; gap:6px; max-height:160px; overflow:auto}
+    .item{display:flex; justify-content:space-between; gap:8px; padding:8px 10px; border:1px solid var(--line); border-radius:10px; background:#0e1117}
+    .badge{font-size:11px; color:#b7bfd0; background:#141922; border:1px solid #1e2431; padding:2px 6px; border-radius:999px}
+    .chat{height:360px; overflow:auto; display:flex; flex-direction:column; gap:10px; border:1px solid var(--line); border-radius:12px; padding:12px; background:#0e1117}
+    .msg{max-width:74%; padding:10px 12px; border-radius:12px; border:1px solid var(--line)}
+    .me{align-self:flex-end; background:#151a26}
+    .ai{align-self:flex-start; background:#0b0e15}
+    .foot{display:flex; gap:8px}
+    .spinner{width:16px;height:16px;border:2px solid #2a3242;border-top-color:var(--brand);border-radius:50%;animation:spin 1s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @media(max-width:860px){.grid{grid-template-columns:1fr}}
+  </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="row" style="justify-content:space-between">
-    <div class="title">RAG (Gemini • Minimal)</div>
-    <div class="row">
-      <input id="backend" class="input" placeholder="Backend URL (leave blank on Vercel)" style="width:260px" />
-      <input id="apiKey" class="input" placeholder="(dev only) Gemini key — avoid in prod" type="password" style="width:280px">
-      <button class="btn" id="setKeyBtn">Set</button>
-    </div>
-  </div>
-
-  <div class="grid">
-    <!-- Documents -->
-    <div class="card stack">
-      <div class="row" style="justify-content:space-between">
-        <div>Knowledge Base</div>
-        <div class="badge" id="docCount">0 docs</div>
-      </div>
-
-      <label class="drop" id="drop">
-        <input id="fileInput" type="file" multiple hidden accept=".pdf,.txt,.md" />
-        <div><strong>Drop files</strong> (PDF / TXT / MD) or <u>browse</u></div>
-        <div class="muted" style="margin-top:6px">We chunk locally; embeddings via backend.</div>
-      </label>
-
-      <div class="list" id="docList"></div>
-      <div class="muted">Tip: Keep files focused; smaller, well-scoped docs retrieve better.</div>
-    </div>
-
-    <!-- Retrieval Settings -->
-    <div class="card stack">
-      <div>Retrieval Settings</div>
+  <div class="wrap">
+    <div class="row" style="justify-content:space-between">
+      <div class="title">RAG (Gemini • Minimal)</div>
       <div class="row">
-        <label class="muted" style="width:140px">Chunk size</label>
-        <input id="chunkSize" class="input" type="number" min="200" max="2000" step="100" value="800" style="width:120px">
-        <label class="muted" style="margin-left:8px;width:60px">Overlap</label>
-        <input id="overlap" class="input" type="number" min="0" max="400" step="50" value="120" style="width:120px">
+        <input id="backend" class="input" placeholder="Backend URL (leave blank on Vercel)" style="width:260px" />
+        <input id="apiKey" class="input" placeholder="(dev only) Gemini key — avoid in prod" type="password" style="width:280px">
+        <button class="btn" id="setKeyBtn">Set</button>
       </div>
-      <div class="row">
-        <label class="muted" style="width:140px">Top-K</label>
-        <input id="topK" class="input" type="number" min="1" max="10" value="4" style="width:120px">
-        <span class="badge">Cosine</span>
+    </div>
+
+    <div class="grid">
+      <!-- Documents -->
+      <div class="card stack">
+        <div class="row" style="justify-content:space-between">
+          <div>Knowledge Base</div>
+          <div class="badge" id="docCount">0 docs</div>
+        </div>
+
+        <label class="drop" id="drop">
+          <input id="fileInput" type="file" multiple hidden accept=".pdf,.txt,.md" />
+          <div><strong>Drop files</strong> (PDF / TXT / MD) or <u>browse</u></div>
+          <div class="muted" style="margin-top:6px">We chunk locally; embeddings via backend.</div>
+        </label>
+
+        <div class="list" id="docList"></div>
+        <div class="muted">Tip: Keep files focused; smaller, well-scoped docs retrieve better.</div>
       </div>
-      <div class="stack">
-        <div class="muted">On Vercel, you can leave Backend empty (same origin).</div>
+
+      <!-- Retrieval Settings -->
+      <div class="card stack">
+        <div>Retrieval Settings</div>
+        <div class="row">
+          <label class="muted" style="width:140px">Chunk size</label>
+          <input id="chunkSize" class="input" type="number" min="200" max="2000" step="100" value="800" style="width:120px">
+          <label class="muted" style="margin-left:8px;width:60px">Overlap</label>
+          <input id="overlap" class="input" type="number" min="0" max="400" step="50" value="120" style="width:120px">
+        </div>
+        <div class="row">
+          <label class="muted" style="width:140px">Top-K</label>
+          <input id="topK" class="input" type="number" min="1" max="10" value="4" style="width:120px">
+          <span class="badge">Cosine</span>
+        </div>
+        <div class="stack">
+          <div class="muted">On Vercel, you can leave Backend empty (same origin).</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat -->
+    <div class="card stack">
+      <div>Chat</div>
+      <div class="chat" id="chat"></div>
+      <div class="foot">
+        <input id="q" class="input" placeholder="Ask about your documents…" style="flex:1">
+        <button class="btn" id="askBtn">Ask</button>
       </div>
     </div>
   </div>
 
-  <!-- Chat -->
-  <div class="card stack">
-    <div>Chat</div>
-    <div class="chat" id="chat"></div>
-    <div class="foot">
-      <input id="q" class="input" placeholder="Ask about your documents…" style="flex:1">
-      <button class="btn" id="askBtn">Ask</button>
-    </div>
-  </div>
-</div>
+  <script>
+    // Initialize Supabase Client
+    const supabaseUrl = 'https://gceqawynmuviqwjtjrgl.supabase.co'
+    const supabaseKey = 'YOUR_SUPABASE_PUBLIC_KEY' // Replace with your public key
+    const supabase = createClient(supabaseUrl, supabaseKey)
 
-<!-- pdf.js for client-side PDF text extraction -->
-<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
-<script>
-  // Set the worker right after pdf.js loads
-  if (!window.pdfjsLib) {
-    alert("pdf.js failed to load");
-  } else {
-    pdfjsLib.GlobalWorkerOptions.workerSrc =
-      "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
-  }
-</script>
+    // Config and state setup
+    const BACKEND_BASE_URL = () => {
+      const input = document.getElementById('backend').value.trim();
+      return input || window.location.origin; // same-origin default (Vercel)
+    };
+    const state = { apiKey: '', docs: [], vectors: [] };
 
-<script>
-  // ========= Config =========
-  const BACKEND_BASE_URL = () => {
-    const input = document.getElementById('backend').value.trim();
-    return input || window.location.origin; // same-origin default (Vercel)
-  };
-  const state = { apiKey: '', docs: [], vectors: [] };
+    // Utilities
+    const byId = id => document.getElementById(id);
+    const chatEl = byId('chat');
+    const render = () => {
+      byId('docCount').textContent = `${state.docs.length} docs`;
+      const list = byId('docList');
+      if (!state.docs.length) { list.innerHTML = '<div class="muted">No documents yet</div>'; return; }
+      list.innerHTML = state.docs.map(d => `
+        <div class="item">
+          <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:70%">${d.name}</div>
+          <div class="muted">${d.chunks.length} chunks</div>
+        </div>
+      `).join('');
+    };
+    const addMsg = (text, who='ai') => {
+      const el = document.createElement('div');
+      el.className = `msg ${who==='me'?'me':'ai'}`;
+      el.innerHTML = text;
+      chatEl.appendChild(el);
+      chatEl.scrollTop = chatEl.scrollHeight;
+      return el;
+    };
 
-  // ========= Utilities =========
-  const byId = id => document.getElementById(id);
-  const chatEl = byId('chat');
-  const render = () => {
-    byId('docCount').textContent = `${state.docs.length} docs`;
-    const list = byId('docList');
-    if (!state.docs.length) { list.innerHTML = '<div class="muted">No documents yet</div>'; return; }
-    list.innerHTML = state.docs.map(d => `
-      <div class="item">
-        <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:70%">${d.name}</div>
-        <div class="muted">${d.chunks.length} chunks</div>
-      </div>
-    `).join('');
-  };
-  const addMsg = (text, who='ai') => {
-    const el = document.createElement('div');
-    el.className = `msg ${who==='me'?'me':'ai'}`;
-    el.innerHTML = text;
-    chatEl.appendChild(el);
-    chatEl.scrollTop = chatEl.scrollHeight;
-    return el;
-  };
-
-  // ========= Chunking =========
-  function chunkText(str, size=800, overlap=120){
-    const words = str.split(/\s+/);
-    const chunks = [];
-    let start = 0;
-    while (start < words.length){
-      const end = Math.min(words.length, start + size);
-      const piece = words.slice(start, end).join(' ').trim();
-      if (piece) chunks.push(piece);
-      start = end - overlap;
-      if (start < 0) start = 0;
-      if (start >= words.length) break;
+    // Chunk text function
+    function chunkText(str, size=800, overlap=120){
+      const words = str.split(/\s+/);
+      const chunks = [];
+      let start = 0;
+      while (start < words.length){
+        const end = Math.min(words.length, start + size);
+        const piece = words.slice(start, end).join(' ').trim();
+        if (piece) chunks.push(piece);
+        start = end - overlap;
+        if (start < 0) start = 0;
+        if (start >= words.length) break;
+      }
+      return chunks;
     }
-    return chunks;
-  }
 
-  // ========= Simple (fallback) embedding =========
-  function bagOfWordsVec(text){
-    const m = new Map();
-    (text.toLowerCase().match(/\b[a-z0-9]{4,}\b/g) || []).forEach(w => m.set(w, (m.get(w)||0)+1));
-    return m;
-  }
-  function cosine(a, b){
-    let dot=0, n1=0, n2=0;
-    a.forEach((va, k)=>{ n1 += va*va; const vb=b.get(k)||0; dot+=va*vb; });
-    b.forEach(vb=>{ n2 += vb*vb; });
-    const d = Math.sqrt(n1)*Math.sqrt(n2);
-    return d? dot/d : 0;
-  }
+    // Simple fallback embedding
+    function bagOfWordsVec(text){
+      const m = new Map();
+      (text.toLowerCase().match(/\b[a-z0-9]{4,}\b/g) || []).forEach(w => m.set(w, (m.get(w)||0)+1));
+      return m;
+    }
 
-  // ========= File handling =========
-  const drop = byId('drop'), fileInput = byId('fileInput');
-  drop.addEventListener('click', ()=>fileInput.click());
-  drop.addEventListener('dragover', e=>{e.preventDefault(); drop.style.background='#12141a';});
-  drop.addEventListener('dragleave', ()=>drop.style.background='#0e1117');
-  drop.addEventListener('drop', async e=>{
-    e.preventDefault();
-    drop.style.background='#0e1117';
-    await handleFiles(e.dataTransfer.files);
-  });
-  fileInput.addEventListener('change', async e=>{
-    await handleFiles(e.target.files);
-    fileInput.value = '';
-  });
+    // Handle file upload and chunking
+    const drop = byId('drop'), fileInput = byId('fileInput');
+    drop.addEventListener('click', ()=>fileInput.click());
+    drop.addEventListener('dragover', e=>{e.preventDefault(); drop.style.background='#12141a';});
+    drop.addEventListener('dragleave', ()=>drop.style.background='#0e1117');
+    drop.addEventListener('drop', async e=>{
+      e.preventDefault();
+      drop.style.background='#0e1117';
+      await handleFiles(e.dataTransfer.files);
+    });
+    fileInput.addEventListener('change', async e=>{
+      await handleFiles(e.target.files);
+      fileInput.value = '';
+    });
 
-  async function handleFiles(fileList){
-    for (const file of fileList){
-      const ext = file.name.toLowerCase().split('.').pop();
-      let text = '';
+    // Handle file processing and storing in Supabase
+    async function handleFiles(fileList){
+      for (const file of fileList){
+        const ext = file.name.toLowerCase().split('.').pop();
+        let text = '';
 
-      if (ext === 'pdf') {
+        if (ext === 'pdf') {
+          try {
+            text = await readPdf(file);
+          } catch (err) {
+            console.error('PDF read error:', err);
+            alert('Could not read PDF: ' + (err?.message || err));
+            continue;
+          }
+        }
+        else if (ext === 'txt' || ext === 'md') {
+          text = await file.text();
+        }
+        else continue;
+
+        if (!text || text.trim().length < 10) continue;
+
+        const size = +byId('chunkSize').value || 800;
+        const overlap = +byId('overlap').value || 120;
+        const chunks = chunkText(text, size, overlap);  // Split text into chunks
+
+        const docId = crypto.randomUUID();
+        const docTitle = file.name;
+
+        // Add to state
+        state.docs.push({ id: docId, name: docTitle, text, chunks });
+        render();
+
+        // Store document and chunks in Supabase
         try {
-          text = await readPdf(file);
+          const { data, error } = await supabase
+            .from('documents')
+            .insert([{ id: docId, title: docTitle, chunks: chunks }]);
+
+          if (error) {
+            throw new Error(error.message);
+          }
+
+          console.log('Document stored in Supabase:', data);
         } catch (err) {
-          console.error('PDF read error:', err);
-          alert('Could not read PDF: ' + (err?.message || err));
-          continue;
+          console.error('Error storing document in Supabase:', err);
         }
-      }
-      else if (ext === 'txt' || ext === 'md') {
-        text = await file.text();
-      }
-      else continue;
 
-      if (!text || text.trim().length < 10) continue;
-
-      const size = +byId('chunkSize').value || 800;
-      const overlap = +byId('overlap').value || 120;
-      const chunks = chunkText(text, size, overlap);
-
-      const docId = crypto.randomUUID();
-      state.docs.push({ id: docId, name: file.name, text, chunks });
-      render();
-
-      // create embeddings via backend (fallback locally if error)
-      const base = BACKEND_BASE_URL();
-      try {
-        const res = await fetch(`${base}/api/embed`, {
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ chunks })
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data?.error || 'embed failed');
-
-        (data.vectors || []).forEach((vec, i)=>{
-          state.vectors.push({ docId, text: chunks[i], vec });
-        });
-      } catch (err){
-        console.warn('Backend embed failed, using fallback.', err);
-        chunks.forEach(ch => state.vectors.push({ docId, text: ch, vec: bagOfWordsVec(ch) }));
-      }
-    }
-  }
-
-  // ========= PDF text via pdf.js =========
-  async function readPdf(file){
-    if (!window.pdfjsLib) throw new Error("pdf.js not available");
-    const ab = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
-    let out = '';
-    for (let p=1; p<=pdf.numPages; p++){
-      const page = await pdf.getPage(p);
-      const content = await page.getTextContent();
-      out += content.items.map(i=>i.str).join(' ') + '\n';
-    }
-    if (!out.trim()) throw new Error('No selectable text found (PDF may be scanned images).');
-    return out;
-  }
-
-  // ========= Ask flow =========
-  byId('askBtn').addEventListener('click', ask);
-  byId('q').addEventListener('keydown', e=>{ if(e.key==='Enter') ask(); });
-  byId('setKeyBtn').addEventListener('click', ()=>{
-    state.apiKey = byId('apiKey').value.trim();
-    addMsg(`<span class="badge">Key set (browser)</span> Use backend in production.`);
-  });
-
-  async function ask(){
-    const q = byId('q').value.trim();
-    if (!q) return;
-    if (!state.docs.length){ addMsg('Add a document first.'); return; }
-
-    addMsg(q, 'me');
-    byId('q').value = '';
-
-    // retrieve top-K
-    const k = Math.max(1, Math.min(10, +byId('topK').value||4));
-    const top = topKLocal(q, k);
-    const context = top.map(t=>t.text).join('\n\n');
-
-    // call chat
-    const thinking = addMsg(`<span class="spinner"></span>`);
-    try{
-      const base = BACKEND_BASE_URL();
-      let answer = '';
-      try {
-        const res = await fetch(`${base}/api/chat`, {
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ question: q, context })
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data?.error || 'chat failed');
-        answer = (data && data.answer) || 'No answer.';
-      } catch (e) {
-        if (state.apiKey){
-          const prompt = `Use the context to answer. If missing, say you lack info.\n\nContext:\n${context}\n\nQuestion: ${q}`;
-          const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${state.apiKey}`,{
-            method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({ contents:[{ parts:[{ text: prompt }]}] })
+        // Create embeddings via backend or fallback
+        const base = BACKEND_BASE_URL();
+        try {
+          const res = await fetch(`${base}/api/embed`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chunks })
           });
-          const json = await resp.json();
-          answer = json?.candidates?.[0]?.content?.parts?.[0]?.text || 'No answer.';
-        } else {
-          throw e;
+          const data = await res.json();
+          if (!res.ok) throw new Error(data?.error || 'embed failed');
+
+          (data.vectors || []).forEach((vec, i) => {
+            state.vectors.push({ docId, text: chunks[i], vec });
+          });
+        } catch (err) {
+          console.warn('Backend embed failed, using fallback.', err);
+          chunks.forEach(ch => state.vectors.push({ docId, text: ch, vec: bagOfWordsVec(ch) }));
         }
       }
-      thinking.innerHTML = sanitize(answer);
-    } catch(e){
-      thinking.innerHTML = 'Error getting answer.';
-      console.error(e);
     }
-  }
 
-  function topKLocal(query, k){
-    const first = state.vectors[0]?.vec;
-    const backendMode = Array.isArray(first);
-    const qv = backendMode ? hashVec(query, first.length || 768) : bagOfWordsVec(query);
-    const scored = state.vectors.map(v=>{
-      const score = backendMode ? cosineArrays(qv, v.vec) : cosine(qv, v.vec);
-      return {...v, score};
-    }).sort((a,b)=>b.score-a.score);
-    return scored.slice(0,k);
-  }
-  function hashVec(text, dim=768){
-    const v = new Float32Array(dim);
-    for (const w of (text.toLowerCase().match(/\b[\w-]{2,}\b/g) || [])){
-      let h = 2166136261;
-      for (let i=0;i<w.length;i++){ h ^= w.charCodeAt(i); h += (h<<1)+(h<<4)+(h<<7)+(h<<8)+(h<<24); }
-      v[Math.abs(h)%dim] += 1;
+    // ========= PDF text via pdf.js =========
+    async function readPdf(file){
+      if (!window.pdfjsLib) throw new Error("pdf.js not available");
+      const ab = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
+      let out = '';
+      for (let p=1; p<=pdf.numPages; p++){
+        const page = await pdf.getPage(p);
+        const content = await page.getTextContent();
+        out += content.items.map(i=>i.str).join(' ') + '\n';
+      }
+      if (!out.trim()) throw new Error('No selectable text found (PDF may be scanned images).');
+      return out;
     }
-    let n=0; for(let i=0;i<dim;i++) n+=v[i]*v[i]; n=Math.sqrt(n)||1; for(let i=0;i<dim;i++) v[i]/=n;
-    return v;
-  }
-  function cosineArrays(a, b){
-    let dot=0, n1=0, n2=0;
-    const L = Math.min(a.length, b.length);
-    for (let i=0;i<L;i++){ dot += a[i]*b[i]; n1 += a[i]*a[i]; n2 += b[i]*b[i]; }
-    const d = Math.sqrt(n1)*Math.sqrt(n2);
-    return d? dot/d : 0;
-  }
-  function sanitize(s){
-    return (s || '').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replace(/\n/g, '<br/>');
-  }
 
-  render();
-</script>
+    // ========= Ask flow =========
+    byId('askBtn').addEventListener('click', ask);
+    byId('q').addEventListener('keydown', e=>{ if(e.key==='Enter') ask(); });
+    byId('setKeyBtn').addEventListener('click', ()=>{
+      state.apiKey = byId('apiKey').value.trim();
+      addMsg(`<span class="badge">Key set (browser)</span> Use backend in production.`);
+    });
 
+    async function ask(){
+      const q = byId('q').value.trim();
+      if (!q) return;
+      if (!state.docs.length){ addMsg('Add a document first.'); return; }
 
+      addMsg(q, 'me');
+      byId('q').value = '';
+
+      // retrieve top-K
+      const k = Math.max(1, Math.min(10, +byId('topK').value||4));
+      const top = topKLocal(q, k);
+      const context = top.map(t=>t.text).join('\n\n');
+
+      // call chat
+      const thinking = addMsg(`<span class="spinner"></span>`);
+      try {
+        const base = BACKEND_BASE_URL();
+        let answer = '';
+        try {
+          const res = await fetch(`${base}/api/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question: q, context })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data?.error || 'chat failed');
+          answer = (data && data.answer) || 'No answer.';
+        } catch (e) {
+          if (state.apiKey) {
+            const prompt = `Use the context to answer. If missing, say you lack info.\n\nContext:\n${context}\n\nQuestion: ${q}`;
+            const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${state.apiKey}`,{
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ contents: [{ parts: [{ text: prompt }]}] })
+            });
+            const json = await resp.json();
+            answer = json?.candidates?.[0]?.content?.parts?.[0]?.text || 'No answer.';
+          } else {
+            throw e;
+          }
+        }
+        thinking.innerHTML = sanitize(answer);
+      } catch (e) {
+        thinking.innerHTML = 'Error getting answer.';
+        console.error(e);
+      }
+    }
+
+    function topKLocal(query, k){
+      const first = state.vectors[0]?.vec;
+      const backendMode = Array.isArray(first); // arrays mean real vectors
+      const qv = backendMode ? hashVec(query, first.length || 768) : bagOfWordsVec(query);
+      const scored = state.vectors.map(v=>{
+        const score = backendMode ? cosineArrays(qv, v.vec) : cosine(qv, v.vec);
+        return {...v, score};
+      }).sort((a,b)=>b.score-a.score);
+      return scored.slice(0,k);
+    }
+    function hashVec(text, dim=768){
+      const v = new Float32Array(dim);
+      for (const w of (text.toLowerCase().match(/\b[\w-]{2,}\b/g) || [])){
+        let h = 2166136261;
+        for (let i=0;i<w.length;i++){ h ^= w.charCodeAt(i); h += (h<<1)+(h<<4)+(h<<7)+(h<<8)+(h<<24); }
+        v[Math.abs(h)%dim] += 1;
+      }
+      let n=0; for(let i=0;i<dim;i++) n+=v[i]*v[i]; n=Math.sqrt(n)||1; for(let i=0;i<dim;i++) v[i]/=n;
+      return v;
+    }
+    function cosineArrays(a, b){
+      let dot=0, n1=0, n2=0;
+      const L = Math.min(a.length, b.length);
+      for (let i=0;i<L;i++){ dot += a[i]*b[i]; n1 += a[i]*a[i]; n2 += b[i]*b[i]; }
+      const d = Math.sqrt(n1)*Math.sqrt(n2);
+      return d? dot/d : 0;
+    }
+    function sanitize(s){
+      return (s || '').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replace(/\n/g, '<br/>');
+    }
+
+    // initial render
+    render();
+  </script>
 </body>
 </html>
